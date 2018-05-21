@@ -1,15 +1,14 @@
 import gpxpy
 import gpxpy.gpx
 from datetime import datetime
+import operator
 
 from .util import Interval
 
 def interval_from_track(track):
     total_intvl = None
     for segment in track.segments:
-        dts = [p.time for p in segment.points]
-        intvl = Interval(min(dts), max(dts))
-
+        intvl = interval_from_segment(segment)
         if total_intvl is None:
             total_intvl = intvl
         else:
@@ -17,40 +16,39 @@ def interval_from_track(track):
 
     return total_intvl
 
-def merge_segments(segments):
-    return segments
+def interval_from_segment(segment):
+    dts = [p.time for p in segment.points]
+    intvl = Interval(min(dts), max(dts))
+    return intvl
 
-def merge_tracks(tracks):
-    all_tracks = [(track, interval_from_track(track)) for track in tracks]
-
+def _merge(elements, do_merge=operator.add):
     while True:
         noverlap = 0
 
-        for i in range(len(all_tracks)):
-            if all_tracks[i] is None: 
-                # we already merged this track as a track b
+        for i in range(len(elements)):
+            if elements[i] is None: 
+                # we already merged this element as a track b
                 continue
 
-            track_a, intvl_a = all_tracks[i]
-            for j in range(i+1, len(all_tracks)):
-                print(i, j)
+            element_a, intvl_a = elements[i]
+            for j in range(i+1, len(elements)):
+                # print(i, j)
 
-                if all_tracks[j] is None: 
+                if elements[j] is None: 
                     # we already merged this track as a track b
                     continue
 
-                track_b, intvl_b = all_tracks[j]
+                element_b, intvl_b = elements[j]
                 
-                print(intvl_a, intvl_b)
-                print(intvl_a.overlap(intvl_b))
+                # print(intvl_a, intvl_b)
+                # print(intvl_a.overlap(intvl_b))
                 if intvl_a.overlap(intvl_b):
-                    print("overlap", intvl_a, intvl_b)
-                    new_track = gpxpy.gpx.GPXTrack()
-                    new_track.segments = merge_segments(track_a.segments + track_b.segments)
+                    # print("overlap", intvl_a, intvl_b)
+                    new_element = do_merge(element_a, element_b)
                     
-                    # replace track a with merged, remove track b
-                    all_tracks[i] = (new_track, intvl_a + intvl_b)
-                    all_tracks[j] = None
+                    # replace element a with merged, remove other
+                    elements[i] = (new_element, intvl_a + intvl_b)
+                    elements[j] = None
                     noverlap += 1
                     break # break out of inner, we have a overlap for track a already
 
@@ -58,14 +56,34 @@ def merge_tracks(tracks):
             # we did not find any overlaps, we're done
             break
 
-    all_tracks = [t for t in all_tracks if t is not None]
+    elements = [t for t in elements if t is not None]
+    return elements
 
-    return [track for track, _ in all_tracks]
+def merge_segments(segments):
+    segments = [(seg, interval_from_segment(seg)) for seg in segments]
+
+    def do_merge(seg_a, seg_b):
+        seg = gpxpy.gpx.GPXTrackSegment()
+        seg.points = sorted(seg_b.points + seg_a.points, key=lambda p: p.time)
+        return seg
+    merged_segments = _merge(segments, do_merge=do_merge)
+
+    return [seg for seg, _ in merged_segments]
+
+def merge_tracks(tracks):
+    all_tracks = [(track, interval_from_track(track)) for track in tracks]
+
+    def do_merge(ta, tb):
+        track = gpxpy.gpx.GPXTrack()
+        track.segments = merge_segments(ta.segments + tb.segments)
+        return track
+
+    merged_tracks = _merge(all_tracks, do_merge=do_merge)
+
+    return [track for track, _ in merged_tracks]
 
 
 def merge_gpx(a, b):
-    print("merging")
-
     gpx = gpxpy.gpx.GPX()
 
     tracks = merge_tracks(a.tracks + b.tracks)

@@ -28,6 +28,6 @@ setup(
         'console_scripts': ["gpxutil=gpxutil.cli:main"]
     },
 
-    install_requires=['pillow'],
+    install_requires=['pillow', 'gpxpy'],
     tests_require = ['pytest', 'mock']
 )
