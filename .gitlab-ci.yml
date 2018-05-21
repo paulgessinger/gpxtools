@@ -1,11 +1,11 @@
 stages:
-  test
+  - test
 
 unit_tests:
   image: python:3.6
   stage: test
   before_script:
-    pip install -e .
-    pip install pytest
+    - pip install -e .
+    - pip install pytest
   script:
-    pytest
+    - pytest
