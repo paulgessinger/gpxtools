@@ -12,11 +12,11 @@ class CreateTracklog:
 
     def __init__(self, parser):
         parser.set_defaults(func=self.__call__)
+        parser.add_argument("outfile",
+                            help="Destination file for the GPX tracklog")
         parser.add_argument("files", 
                             nargs="+",
                             help="Image files to extract GPS positions from. Can be a glob pattern")
-        parser.add_argument("outfile",
-                            help="Destination file for the GPX tracklog")
 
     def __call__(self, args):
         logger = logging.getLogger(self.__class__.__name__)

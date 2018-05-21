@@ -3,6 +3,7 @@ import logging
 import sys
 
 from .create_tracklog import CreateTracklog
+from .merge_files import MergeFilesCommand
 
 # def create_tracklog(args):
 
@@ -16,6 +17,9 @@ def main():
 
     create_tracklog_parser = subparsers.add_parser("create-tracklog", help=CreateTracklog.__doc__)
     CreateTracklog(create_tracklog_parser)
+
+    merge_parser = subparsers.add_parser("merge", help=MergeFilesCommand.__doc__)
+    MergeFilesCommand(merge_parser)
 
 
     args = parser.parse_args()
