@@ -28,9 +28,14 @@ class MergeFilesCommand:
 
         def read(file):
             with open(file, "r") as f:
-                gpxpy.parse(f)
+                return gpxpy.parse(f)
 
         gpxs = map(read, args.files)
 
         merged = reduce(merge_gpx, gpxs)
+
+        with open(args.outfile, "w+") as file:
+            file.write(merged.to_xml())
+
+        logger.info("Merging complete")
 
