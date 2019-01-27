@@ -2,6 +2,7 @@ import logging
 from glob import glob
 import os
 import gpxpy
+from datetime import timedelta
 
 from ..image import ImageMetaData, ImageMetaDataError, ImageList
 
@@ -17,6 +18,7 @@ class CreateTracklog:
         parser.add_argument("files", 
                             nargs="+",
                             help="Image files to extract GPS positions from. Can be a glob pattern")
+        parser.add_argument("--datetime-offset", "-do", type=int, default=0, help="Datetime offset in hours")
 
     def __call__(self, args):
         logger = logging.getLogger(self.__class__.__name__)
@@ -32,6 +34,9 @@ class CreateTracklog:
 
         logger.info("Processing %d files", len(files))
 
+        if args.datetime_offset != 0:
+            logger.debug("Datetime offset is %u hours", args.datetime_offset)
+        offset = timedelta(hours=args.datetime_offset)
 
         imagelist = ImageList()
 
@@ -41,7 +46,7 @@ class CreateTracklog:
                 if not os.path.exists(file):
                     logger.error("Image at %s not found, skipping", file)
                     continue
-                meta = ImageMetaData(file)
+                meta = ImageMetaData(file, datetime_offset=offset)
                 imagelist.add(meta)
 
             except ImageMetaDataError as e:

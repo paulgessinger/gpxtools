@@ -2,7 +2,7 @@ from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import gpxpy
 import gpxpy.gpx
@@ -17,7 +17,7 @@ class ImageMetaData:
     Parts adapted from https://gist.github.com/erans/983821/cce3712b82b3de71c73fbce9640e25adef2b0392
     """
 
-    def __init__(self, path):
+    def __init__(self, path, datetime_offset = None):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.debug("Getting image info for %s", path)
         if not os.path.exists(path):
@@ -30,6 +30,10 @@ class ImageMetaData:
             raise ImageMetaDataError("Not an image")
         self.exif_data = self._get_exif_data()
         self.datetime = datetime.strptime(self.exif_data["DateTime"], "%Y:%m:%d %H:%M:%S")
+
+        datetime_offset = datetime_offset or timedelta(hours=0)
+        self.datetime += datetime_offset
+
         self.lat, self.lng = self._get_lat_lng()
 
     def _get_exif_data(self):
